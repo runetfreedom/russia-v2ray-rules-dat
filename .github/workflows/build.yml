@@ -1,0 +1,53 @@
+name: build.yml
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 3,9,15,21 * * *"
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "**/README.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set variables
+        run: |
+          echo "RELEASE_NAME=Released on $(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+          echo "TAG_NAME=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+          
+          echo "GEOIP_URL=https://raw.githubusercontent.com/runetfreedom/russia-blocked-geoip/release/geoip.dat" >> $GITHUB_ENV
+          echo "GEOSITE_URL=https://raw.githubusercontent.com/runetfreedom/russia-blocked-geosite/release/geosite.dat" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Collect files
+        run: |
+          mkdir -p ./publish
+          curl -sSL $GEOIP_URL > ./publish/geoip.dat
+          curl -sSL $GEOIP_URL.sha256sum > ./publish/geoip.dat.sha256sum
+          
+          curl -sSL $GEOSITE_URL > ./publish/geosite.dat
+          curl -sSL $GEOSITE_URL.sha256sum > ./publish/geosite.dat.sha256sum
+
+      - name: Release and upload assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: ${{ env.RELEASE_NAME }}
+          tag: ${{ env.TAG_NAME }}
+          file_glob: true
+          file: ./publish/*
+
+      - name: Git push assets to "release" branch
+        run: |
+          cd publish || exit 1
+          git init
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b release
+          git add .
+          git commit -m "${{ env.RELEASE_NAME }}"
+          git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          git push -f -u origin release
