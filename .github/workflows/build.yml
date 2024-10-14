@@ -47,7 +47,8 @@ jobs:
           go build -C geodat2srs ./
           ./geodat2srs/geodat2srs geoip -i ./publish/geoip.dat -o ./tmp/sing-box/rule-set-geoip/
           ./geodat2srs/geodat2srs geosite -i ./publish/geosite.dat -o ./tmp/sing-box/rule-set-geosite/
-          zip -r ./publish/sing-box.zip ./tmp/sing-box
+          cd ./tmp/sing-box || exit 1
+          zip -r ../../publish/sing-box.zip *
 
       - name: Release and upload assets
         uses: svenstaro/upload-release-action@v2
