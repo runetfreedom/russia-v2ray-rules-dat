@@ -22,6 +22,17 @@ jobs:
           echo "GEOSITE_URL=https://raw.githubusercontent.com/runetfreedom/russia-blocked-geosite/release/geosite.dat" >> $GITHUB_ENV
         shell: bash
 
+      - name: Checkout runetfreedom/geodat2srs
+        uses: actions/checkout@v4
+        with:
+          repository: runetfreedom/geodat2srs
+          path: geodat2srs
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./geodat2srs/go.mod
+
       - name: Collect files
         run: |
           mkdir -p ./publish
@@ -30,6 +41,13 @@ jobs:
           
           curl -sSL $GEOSITE_URL > ./publish/geosite.dat
           curl -sSL $GEOSITE_URL.sha256sum > ./publish/geosite.dat.sha256sum
+
+      - name: Generate sing-box srs
+        run: |
+          go build -C geodat2srs ./
+          ./geodat2srs/geodat2srs geoip -i ./publish/geoip.dat -o ./tmp/sing-box/rule-set-geoip/
+          ./geodat2srs/geodat2srs geosite -i ./publish/geosite.dat -o ./tmp/sing-box/rule-set-geosite/
+          zip -r ./publish/sing-box.zip ./tmp/sing-box
 
       - name: Release and upload assets
         uses: svenstaro/upload-release-action@v2
@@ -42,6 +60,8 @@ jobs:
 
       - name: Git push assets to "release" branch
         run: |
+          rm -rf ./publish/sing-box.zip
+          mv ./tmp/sing-box ./publish/sing-box
           cd publish || exit 1
           git init
           git config --local user.name "github-actions[bot]"
