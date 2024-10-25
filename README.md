@@ -16,6 +16,7 @@
 
 - `ru-blocked` содержит `ipresolve.lst` и `subnet.lst` сервиса antifilter.download
 - `ru-blocked-community` содержит `community.lst` сервиса community.antifilter.download
+- `re-filter` содержит `ipsum.lst` из [re:filter](https://github.com/1andrevich/Re-filter-lists)
 
 Для вашего удобства в файлы включены несколько дополнительных категорий (на основе ASN):
 
